@@ -16,10 +16,10 @@ use log::debug;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 pub use crate::models::{Transformer, TransformerBuilder};
+pub use crate::sampler::Sampler;
+pub use crate::tokenizer::Tokenizer;
 
 use crate::generation::{chat, generate};
-use crate::sampler::Sampler;
-use crate::tokenizer::Tokenizer;
 
 #[derive(Debug, Clone)]
 pub struct InferenceConfig {
