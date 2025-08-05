@@ -52,13 +52,16 @@ The project uses a **decoder-only Transformer** model with optimizations such as
 ### 📐 Key Components & Formulas
 
 #### 1. **RMSNorm (Root Mean Square Layer Normalization)**
+
 $$
 \text{RMSNorm}(x) = x \cdot \frac{\gamma}{\sqrt{\frac{1}{n} \sum_{i=1}^{n} x_i^2 + \epsilon}}
 $$
+
 - No mean subtraction, only variance normalization.
 - Used before attention and FFN blocks.
 
 #### 2. **Rotary Position Embedding (RoPE)**
+
 - Encodes position information directly into query and key vectors.
 - For each head and dimension pair:
   $$
@@ -84,9 +87,11 @@ $$
   $$
 
 #### 3. **Multi-Head Attention (MHA)**
+
 $$
 \text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V
 $$
+
 - With **Grouped Query Attention (GQA)**:
   $$
   n_{kv\_heads} < n_{heads}
@@ -94,13 +99,16 @@ $$
   Multiple query heads share the same key/value heads, reducing KV cache size.
 
 #### 4. **SwiGLU Activation Function**
+
 $$
 \text{SwiGLU}(x) = \sigma(xW_1) \odot (xW_3) W_2
 $$
+
 - Combines gated activation with linear transformation.
 - Enhances model expressiveness.
 
 #### 5. **Quantized Linear Layers**
+
 - Weights stored in INT8 format:
   $$
   w_{quantized} = \text{round}(w / s), \quad w = s \cdot w_{quantized}
@@ -153,16 +161,16 @@ Input Token ID → TokenEmbedding → N × TransformerBlock → Final RMSNorm �
 Where each `TransformerBlock` does:
 
 1. **Attention Path**
-   - $ x_{norm} = \text{RMSNorm}(x) $
-   - $ Q, K, V = x_{norm}W_q, x_{norm}W_k, x_{norm}W_v $
+   - $ x\_{norm} = \text{RMSNorm}(x) $
+   - $ Q, K, V = x*{norm}W_q, x*{norm}W*k, x*{norm}W_v $
    - Apply RoPE to $ Q, K $
    - Compute $ A = \text{softmax}(QK^T/\sqrt{d_k})V $
    - $ x = x + A $
 
 2. **Feed-Forward Path**
-   - $ x_{norm} = \text{RMSNorm}(x) $
-   - $ G = \sigma(x_{norm}W_1) $
-   - $ U = x_{norm}W_3 $
+   - $ x\_{norm} = \text{RMSNorm}(x) $
+   - $ G = \sigma(x\_{norm}W_1) $
+   - $ U = x\_{norm}W_3 $
    - $ F = (G \odot U)W_2 $
    - $ x = x + F $
 
@@ -170,13 +178,13 @@ Where each `TransformerBlock` does:
 
 ### ✅ Summary of Optimizations
 
-| Feature | Description | Benefit |
-|--------|-------------|---------|
-| **Grouped Query Attention (GQA)** | Reduces number of KV heads | Lowers memory usage |
-| **Rotary Position Embedding (RoPE)** | Relative positional encoding | Better extrapolation |
-| **RMSNorm** | Simplified normalization | Faster and more stable |
-| **SwiGLU** | Gated non-linearity | Increased model capacity |
-| **INT8 Quantization** | Stores weights in 8-bit integers | Saves memory, faster inference |
+| Feature                              | Description                      | Benefit                        |
+| ------------------------------------ | -------------------------------- | ------------------------------ |
+| **Grouped Query Attention (GQA)**    | Reduces number of KV heads       | Lowers memory usage            |
+| **Rotary Position Embedding (RoPE)** | Relative positional encoding     | Better extrapolation           |
+| **RMSNorm**                          | Simplified normalization         | Faster and more stable         |
+| **SwiGLU**                           | Gated non-linearity              | Increased model capacity       |
+| **INT8 Quantization**                | Stores weights in 8-bit integers | Saves memory, faster inference |
 
 ---
 

@@ -4,7 +4,6 @@
 
 > **Note:** Parts of this codebase, including documentation and core algorithms, were generated or assisted by large language models (LLMs) to accelerate development and improve educational clarity. As a starting reference, the project [qwen3.c](https://github.com/adriancable/qwen3.c) was used for understanding model internals and file formats.
 
-
 ## Project Goals
 
 - **Educational:** Learn how transformer architectures, quantization, and efficient inference work in Rust.
@@ -40,7 +39,6 @@ git clone https://huggingface.co/Qwen/Qwen3-0.6B
 **NOTE**: `Low Rank Adaptation (LoRA)` is supported: copy `adapter_config.json` and safe tensor files to the same folder,
 where base model is located, and it will be automatically detected (tested with `usloth` output).
 
-
 ### 2. Build and run the exporter
 
 ```bash
@@ -61,24 +59,31 @@ cargo run --release -p qwen3-cli -- inference /path/to/output.bin -m chat
 ## CLI Commands and Options
 
 ### `export`
+
 Exports a HuggingFace Qwen3 model to a custom binary format for efficient Rust inference.
 
 **Usage:**
+
 ```bash
 qwen3 export <MODEL_PATH> <OUTPUT_PATH> [--group-size <SIZE>]
 ```
-- `MODEL_PATH`: Path to HuggingFace model directory (must contain config.json, *.safetensors, tokenizer.json)
+
+- `MODEL_PATH`: Path to HuggingFace model directory (must contain config.json, \*.safetensors, tokenizer.json)
 - `OUTPUT_PATH`: Output path for the binary model file
 - `--group-size`, `-g`: Quantization group size (default: 64)
 
 ### `inference`
+
 Runs inference on a binary Qwen3 model.
 
 **Usage:**
+
 ```bash
 qwen3 inference <checkpoint> [options]
 ```
+
 **Options:**
+
 - `--temperature`, `-t <FLOAT>`: Sampling temperature (default: 1.0)
 - `--topp`, `-p <FLOAT>`: Top-p nucleus sampling (default: 0.9)
 - `--seed`, `-s <INT>`: Random seed
@@ -87,4 +92,3 @@ qwen3 inference <checkpoint> [options]
 - `--input`, `-i <STRING>`: Input prompt
 - `--system`, `-y <STRING>`: System prompt (for chat mode)
 - `--reasoning`, `-r <INT>`: Reasoning mode: 0=no thinking, 1=thinking (default: 0)
-

@@ -18,21 +18,25 @@ let scale = 0.005;  // One shared number to "uncompress"
 ## **Simple Example: Without Groups (Bad Approach)**
 
 Let's say we have these weights:
+
 ```rust
 let weights = [0.1, -0.8, 0.05, -0.02];
 ```
 
 ### **Step 1: Find overall maximum**
+
 ```rust
 let max_abs = 0.8;  // Largest absolute value
 ```
 
 ### **Step 2: Calculate scale**
+
 ```rust
 let scale = max_abs / 127.0;  // 0.8 / 127 = 0.0063
 ```
 
 ### **Step 3: Quantize each weight**
+
 ```rust
 // Formula: quantized = round(weight / scale)
 let weight_0 = 0.1 / 0.0063 = 15.87 → 16
@@ -44,6 +48,7 @@ let weight_3 = -0.02 / 0.0063 = -3.17 → -3
 ```
 
 ### **Step 4: Check accuracy (dequantization)**
+
 ```rust
 // To get back original: quantized * scale
 let recovered_0 = 16 * 0.0063 = 0.101   (original: 0.1)   ✓ Good
@@ -64,13 +69,14 @@ What if we have weights with very different ranges?
 let weights = [
     // Group 1: Large values
     10.5, -8.2, 9.1, -7.8,
-    
-    // Group 2: Small values  
+
+    // Group 2: Small values
     0.001, -0.002, 0.0015, -0.0008
 ];
 ```
 
 ### **Using single scale (bad):**
+
 ```rust
 let max_abs = 10.5;  // Dominated by large values
 let scale = 10.5 / 127.0 = 0.0827;
@@ -95,7 +101,7 @@ Instead of one scale for everything, use **different scales for different groups
 let weights = [
     // Group 1: Large values [indices 0-3]
     10.5, -8.2, 9.1, -7.8,
-    
+
     // Group 2: Small values [indices 4-7]
     0.001, -0.002, 0.0015, -0.0008
 ];
@@ -104,6 +110,7 @@ let group_size = 4;  // Process 4 weights at a time
 ```
 
 ### **Group 1 processing:**
+
 ```rust
 let group1 = [10.5, -8.2, 9.1, -7.8];
 let group1_max = 10.5;
@@ -114,6 +121,7 @@ let q1 = [127, -99, 110, -94];  // Good precision!
 ```
 
 ### **Group 2 processing:**
+
 ```rust
 let group2 = [0.001, -0.002, 0.0015, -0.0008];
 let group2_max = 0.002;
@@ -124,12 +132,13 @@ let q2 = [64, -127, 95, -51];  // Good precision preserved!
 ```
 
 ### **Verify accuracy:**
+
 ```rust
 // Group 1 recovery:
 127 * 0.0827 = 10.51   (original: 10.5)   ✓
 -99 * 0.0827 = -8.19   (original: -8.2)   ✓
 
-// Group 2 recovery:  
+// Group 2 recovery:
 64 * 0.0000157 = 0.001  (original: 0.001)  ✓
 -127 * 0.0000157 = -0.002 (original: -0.002) ✓
 ```
@@ -149,6 +158,7 @@ let group_size = 4;
 ```
 
 ### **Step 1: Split into groups**
+
 ```rust
 // Your code: (0..num_groups).into_par_iter()
 let num_groups = weights.len() / group_size;  // 8 / 4 = 2 groups
@@ -158,6 +168,7 @@ let num_groups = weights.len() / group_size;  // 8 / 4 = 2 groups
 ```
 
 ### **Step 2: Process each group in parallel**
+
 ```rust
 // Group 0 processing:
 let group = [2.0, -1.5, 0.8, -0.3];
@@ -175,6 +186,7 @@ let scale = if group_max > 0.0 {
 ```
 
 ### **Step 3: Quantize each weight in group**
+
 ```rust
 let mut group_int8 = Vec::with_capacity(4);
 
@@ -185,7 +197,7 @@ for &weight in group {  // [2.0, -1.5, 0.8, -0.3]
 
 // Calculations:
 // 2.0 / 0.0157 = 127.4 → 127
-// -1.5 / 0.0157 = -95.5 → -96  
+// -1.5 / 0.0157 = -95.5 → -96
 // 0.8 / 0.0157 = 51.0 → 51
 // -0.3 / 0.0157 = -19.1 → -19
 
@@ -193,6 +205,7 @@ for &weight in group {  // [2.0, -1.5, 0.8, -0.3]
 ```
 
 ### **Step 4: Calculate error**
+
 ```rust
 let mut group_error = 0.0f32;
 
@@ -208,6 +221,7 @@ for (quantized, original) in group_int8.iter().zip(group.iter()) {
 ```
 
 ### **Step 5: Same process for Group 1**
+
 ```rust
 // Group 1: [0.01, -0.02, 0.005, -0.001]
 // group_max = 0.02
@@ -216,6 +230,7 @@ for (quantized, original) in group_int8.iter().zip(group.iter()) {
 ```
 
 ### **Step 6: Combine results**
+
 ```rust
 // Final result:
 let int8_data = [127, -96, 51, -19, 64, -127, 32, -6];  // 8 bytes
@@ -228,17 +243,19 @@ let scales = [0.0157, 0.000157];  // 2 scales (8 bytes)
 ## **Why This Works So Well**
 
 ### **Memory Savings:**
+
 ```rust
 // Original: 8 weights × 4 bytes = 32 bytes
 let original = [2.0_f32, -1.5, 0.8, -0.3, 0.01, -0.02, 0.005, -0.001];
 
-// Quantized: 8 weights × 1 byte + 2 scales × 4 bytes = 16 bytes  
+// Quantized: 8 weights × 1 byte + 2 scales × 4 bytes = 16 bytes
 let quantized = [127_i8, -96, 51, -19, 64, -127, 32, -6];  // 8 bytes
 let scales = [0.0157_f32, 0.000157];  // 8 bytes
 // Total: 50% size reduction!
 ```
 
 ### **Precision Preservation:**
+
 ```rust
 // Without groups: Small values → 0 (lost!)
 // With groups: Small values → [64, -127, 32, -6] (preserved!)

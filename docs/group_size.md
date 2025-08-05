@@ -30,6 +30,7 @@ pub fn new(config: ModelConfig, mut group_size: usize) -> Self {
 ```
 
 **Why this matters:**
+
 ```rust
 // Example: LLaMA model
 let hidden_dim = 4096;  // Must divide evenly
@@ -89,6 +90,7 @@ let weights = [
 ```
 
 ### **Large Group Size (group_size = 16, one group):**
+
 ```rust
 let max_abs = 5.0;  // Dominated by large values
 let scale = 5.0 / 127.0 = 0.0394;
@@ -101,6 +103,7 @@ let scale = 5.0 / 127.0 = 0.0394;
 ```
 
 ### **Small Group Size (group_size = 8, two groups):**
+
 ```rust
 // Group 1: [5.0, -4.2, 3.8, -3.1, 4.5, -2.9, 3.2, -4.1]
 let scale1 = 5.0 / 127.0 = 0.0394;
@@ -115,6 +118,7 @@ let scale2 = 0.015 / 127.0 = 0.000118;
 ---
 
 ## **Different Model Sizes**
+
 ```rust
 // Small models (7B parameters)
 let group_size = 64;    // Can afford smaller groups

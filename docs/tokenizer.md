@@ -20,6 +20,7 @@ Let/s explain tokenization from the LLM theory perspective and why the `tokenize
 ```
 
 **Why not just use characters or words?**
+
 - **Characters**: Too granular (millions of combinations)
 - **Words**: Too rigid (can't handle "unhappiness" if only learned "happy")
 - **Tokens**: Perfect middle ground (subword pieces)
@@ -69,6 +70,7 @@ This is exactly what `extract_merge_ranks()` extracts from the HuggingFace token
 ## **The Mathematical Foundation**
 
 ### **Token Embeddings:**
+
 Each token ID maps to a high-dimensional vector:
 
 ```rust
@@ -77,25 +79,27 @@ Each token ID maps to a high-dimensional vector:
 ```
 
 ### **Attention Mechanism:**
+
 ```rust
 // LLM processes: "Hello world"
-// Token IDs:     [1000, 1001]  
+// Token IDs:     [1000, 1001]
 // Embeddings:    [[0.1, -0.3, ...], [0.5, 0.2, ...]]
-// 
+//
 // Attention computes relationships:
 // How much should "world" pay attention to "Hello"?
 // Result: Rich contextual understanding
 ```
 
 ### **Text Generation:**
+
 ```rust
 // Given context: "The cat sat on the"
 // Model outputs probability distribution over ALL tokens:
 // P(token_0) = 0.001   // "!"
-// P(token_1) = 0.002   // "a" 
+// P(token_1) = 0.002   // "a"
 // ...
 // P(token_5431) = 0.847 // "mat"  <- highest probability
-// 
+//
 // Sample from distribution -> generate "mat"
 // Result: "The cat sat on the mat"
 ```
@@ -164,6 +168,7 @@ let score = if let Some(&rank) = merge_ranks.get(token) {
 ```
 
 **During tokenization:**
+
 ```rust
 // Input: "hello"
 // Possible tokenizations:
@@ -182,7 +187,7 @@ let problematic_token = "café🤖";
 
 // Solution: Convert to consistent byte representation
 // 'c' -> 99    (ASCII)
-// 'a' -> 97    (ASCII)  
+// 'a' -> 97    (ASCII)
 // 'f' -> 102   (ASCII)
 // 'é' -> 233   (mapped using GPT-2 scheme)
 // '🤖' -> [240, 159, 164, 150]  (UTF-8 bytes)
@@ -195,6 +200,7 @@ let problematic_token = "café🤖";
 ## **LLM Training vs Inference Perspective**
 
 ### **Training Time (One-time):**
+
 ```rust
 // 1. Learn BPE merges from massive text corpus
 // 2. Build vocabulary of ~50,000 tokens
@@ -203,6 +209,7 @@ let problematic_token = "café🤖";
 ```
 
 ### **Inference Time (Every user interaction):**
+
 ```rust
 // 1. FAST tokenization: text -> token_ids
 // 2. Model forward pass: token_ids -> probabilities
@@ -219,6 +226,7 @@ let problematic_token = "café🤖";
 ## **Real-World Impact**
 
 ### **Before Optimization (JSON tokenizer):**
+
 ```rust
 // Generate "Hello, how are you today?"
 // ~8 tokens × 50μs lookup = 400μs tokenization overhead
@@ -226,13 +234,15 @@ let problematic_token = "café🤖";
 ```
 
 ### **After Optimization (Binary tokenizer):**
-```rust  
+
+```rust
 // Same generation: 8 tokens × 0.5μs = 4μs overhead
 // 100x speedup = imperceptible to users
 // Enables real-time streaming generation ⚡
 ```
 
 ### **Memory Efficiency:**
+
 ```rust
 // Qwen3-1.7B tokenizer:
 // tokenizer.json:     5MB (nested JSON, metadata)
@@ -252,7 +262,7 @@ let problematic_token = "café🤖";
 let tokens = tokenizer.encode("What is the capital of France?")?;
 // -> [3923, 374, 279, 6864, 315, 9822, 30]
 
-// 2. MODEL INFERENCE (quantized weights from model_exporter)  
+// 2. MODEL INFERENCE (quantized weights from model_exporter)
 let logits = model.forward(&tokens)?;
 // -> [0.001, 0.002, ..., 0.847, ...]  // 50k probabilities
 
